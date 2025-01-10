@@ -1,0 +1,62 @@
+definitions:
+  models.User:
+    properties:
+      account:
+        type: string
+      id:
+        type: integer
+      password:
+        type: string
+      password_hash:
+        type: string
+    type: object
+  utils.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      details: {}
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API for wonser-interview
+  title: wonser-interview
+  version: "1.0"
+paths:
+  /login:
+    post:
+      description: Login with account and password
+      parameters:
+      - description: User account and password
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JWT token
+          schema:
+            type: string
+        "400":
+          description: Invalid data
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Invalid password
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Failed to generate token
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Login
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

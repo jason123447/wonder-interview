@@ -27,45 +27,31 @@ func SocketHandler(c *gin.Context) {
 	}
 	log.Println("channelID: " + channelIDStr + ", token: " + token)
 
-	// authorization := c.Request.Header.Get("Authorization")
-	// log.Println(authorization)
-
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	addListener(channelID, ws)
+	if err := addListener(channelID, ws); err != nil {
+		panic(err)
+	}
 
 }
 
-// func addChannel(channelID int, conn *websocket.Conn) {
-// 	if Channels[channelID] == nil {
-// 		Channels[channelID] = make([]*websocket.Conn, 0)
-// 	}
-// 	Channels[channelID] = append(Channels[channelID], conn)
-// 	log.Println("add channel: " + strconv.Itoa(channelID))
-// }
-
-// func removeChannel(channelID int) {
-// 	conns, ok := Channels[channelID]
-// 	if ok {
-// 		for _, c := range conns {
-// 			c.Close()
-// 		}
-// 	}
-// 	delete(Channels, channelID)
-// 	log.Println("remove channel: " + strconv.Itoa(channelID))
-// }
-
-func addListener(channelID int, listener *websocket.Conn) {
+func addListener(channelID int, listener *websocket.Conn) error {
 	if Channels[channelID] == nil {
 		Channels[channelID] = make([]*websocket.Conn, 0)
 		log.Println("add channel: " + strconv.Itoa(channelID))
 	}
+	// length := len(Channels[channelID])
+	// if length >= connectionLimit {
+	// 	return errors.New("channel connection limit reached")
+	// }
 	Channels[channelID] = append(Channels[channelID], listener)
-	log.Println("add listener: " + strconv.Itoa(channelID))
+	length := len(Channels[channelID])
+	log.Println("add listener: "+strconv.Itoa(channelID), "listener counts: "+strconv.Itoa(length))
 	listenChannel(channelID, listener)
+	return nil
 }
 
 func removeListener(channelID int, listener *websocket.Conn) {
@@ -91,12 +77,11 @@ func listenChannel(channelID int, ws *websocket.Conn) {
 			// panic(err)
 			break
 		}
-		Broadcast(channelID, "Server says: "+string(message))
+		broadcast(channelID, "Server says: "+string(message))
 	}
-
 }
 
-func Broadcast(channelID int, message string) {
+func broadcast(channelID int, message string) {
 	conns, ok := Channels[channelID]
 	if ok {
 		for _, c := range conns {

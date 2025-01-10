@@ -32,6 +32,7 @@ func main() {
 
 	ws := r.Group("/ws")
 	ws.Use(utils.AuthenticateJWTMiddleware(config.SECRET_KEY))
-	ws.GET("/:channelID", handlers.SocketHandler)
+	// ws.GET("/:channelID", handlers.SocketHandler)
+	ws.GET("/:channelID", handlers.SocketHandlerWithChannel)
 	r.Run(":8080")
 }

@@ -35,23 +35,12 @@ func SocketHandlerWithChannel(c *gin.Context) {
 
 func addListenerWithChannel(wsChannelID int, ws *websocket.Conn) {
 	ch := make(chan string)
-	addListenerToWsChannel(wsChannelID, ch)
+	addChannelToMap(wsChannelID, ch)
 
 	done := make(chan bool)
 	defer func() {
 		ws.Close()
-		mu.Lock()
-		defer mu.Unlock()
-		channelSlices := goChannelsMap[wsChannelID]
-		for i, _ch := range channelSlices {
-			if ch == _ch {
-				channelSlices = append(channelSlices[:i], channelSlices[i+1:]...)
-				goChannelsMap[wsChannelID] = channelSlices
-				log.Println("remove listener: " + strconv.Itoa(wsChannelID) + " channel counts: " + strconv.Itoa(len(channelSlices)))
-				// log.Println("channelSlices: ", channelSlices)
-				break
-			}
-		}
+		removeChannelFromMap(wsChannelID, ch)
 		close(ch)
 		close(done)
 	}()
@@ -82,7 +71,7 @@ func addListenerWithChannel(wsChannelID int, ws *websocket.Conn) {
 	}
 }
 
-func addListenerToWsChannel(wsChannelID int, ch chan string) {
+func addChannelToMap(wsChannelID int, ch chan string) {
 	mu.Lock()
 	defer mu.Unlock()
 	if goChannelsMap[wsChannelID] == nil {
@@ -92,4 +81,18 @@ func addListenerToWsChannel(wsChannelID int, ch chan string) {
 	channelSlices = append(channelSlices, ch)
 	goChannelsMap[wsChannelID] = channelSlices
 	log.Println("add listener: " + strconv.Itoa(wsChannelID) + " channel counts: " + strconv.Itoa(len(channelSlices)))
+}
+
+func removeChannelFromMap(wsChannelID int, ch chan string) {
+	mu.Lock()
+	defer mu.Unlock()
+	channelSlices := goChannelsMap[wsChannelID]
+	for i, _ch := range channelSlices {
+		if ch == _ch {
+			channelSlices = append(channelSlices[:i], channelSlices[i+1:]...)
+			goChannelsMap[wsChannelID] = channelSlices
+			log.Println("remove listener: " + strconv.Itoa(wsChannelID) + " channel counts: " + strconv.Itoa(len(channelSlices)))
+			break
+		}
+	}
 }

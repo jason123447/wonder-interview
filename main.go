@@ -30,9 +30,12 @@ func main() {
 
 	r.POST("/login", handlers.LoginHandler)
 
+	manager := handlers.NewClientManager()
+	go manager.Start()
+
 	ws := r.Group("/ws")
-	ws.Use(utils.AuthenticateJWTMiddleware(config.SECRET_KEY))
+	// ws.Use(utils.AuthenticateJWTMiddleware(config.SECRET_KEY))
 	// ws.GET("/:channelID", handlers.SocketHandler)
-	ws.GET("/:channelID", handlers.SocketHandlerWithChannel)
+	ws.GET("/:channelID", handlers.SocketHandlerWithManager)
 	r.Run(":8080")
 }
